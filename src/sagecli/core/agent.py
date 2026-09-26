@@ -79,10 +79,11 @@ class SageAgent:
                 final_answer = response.content
                 break
 
-            # 1. Output thoughts/reasoning if provided
+            # 1. Output thoughts/reasoning or answer if provided
             if response.content and response.content.strip():
-                # Display clean thought
-                self.console.print(f"\n{response.content.strip()}\n")
+                self.console.print()
+                self.console.markdown(response.content)
+                self.console.print()
                 final_answer = response.content
 
             # 2. Add assistant message to conversation history

@@ -46,6 +46,14 @@ class SageConsole:
     def print(self, *args, **kwargs) -> None:
         self._console.print(*args, **kwargs)
 
+    def markdown(self, content: str, code_theme: str = "monokai") -> None:
+        """Render markdown text with rich styling, headings, lists, and syntax-highlighted code blocks."""
+        from rich.markdown import Markdown
+        if not content:
+            return
+        md = Markdown(content.strip(), code_theme=code_theme)
+        self._console.print(md)
+
     def rule(self, title: str = "", **kwargs) -> None:
         self._console.rule(title, style=Palette.BORDER_MUTED, **kwargs)
 
