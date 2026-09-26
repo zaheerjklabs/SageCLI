@@ -1,3 +1,32 @@
+Metadata-Version: 2.4
+Name: sagecli
+Version: 0.1.0
+Summary: SageCLI - AI Engineering Agent for Machine Learning & Deep Learning
+Author: SageCLI Team
+License: MIT
+Keywords: ai,cli,machine-learning,deep-learning,agent,engineering
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: rich>=13.0.0
+Requires-Dist: typer>=0.9.0
+Requires-Dist: prompt-toolkit>=3.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Dynamic: license-file
+
 # SageCLI
 
 ```text
@@ -102,31 +131,21 @@ SageCLI will:
 
 ---
 
-## 🎮 Interactive Slash Commands (`/`)
+## 🎮 Interactive REPL Commands
 
-SageCLI provides an intuitive, Claude Code-inspired command palette with autocompletion and instant dropdown help:
-
-| Command | Action | Description |
-| :--- | :--- | :--- |
-| `/help` | Detailed help manual | View all commands, shortcuts, and capabilities |
-| `/setup` | Setup wizard | Interactive multi-provider and API key configuration |
-| `/config` | View/edit settings | Show active configuration or update with `/config set <key> <val>` |
-| `/mode <safe\|auto\|plan>` | Switch execution mode | `Safe` (confirm writes), `Auto` (full autonomous), `Plan` (read-only) |
-| `/model [name]` | Switch LLM model | Switch model or view recommended options |
-| `/provider [name]` | Switch AI provider | `gemini`, `openai`, `anthropic`, `groq`, `openrouter`, `ollama` |
-| `/doctor` | Environment diagnostics | Inspect Python, GPU/CUDA, Git repo, disk space, and API latency |
-| `/cost` / `/usage` | Token & cost tracking | Display session token usage and estimated USD cost breakdown |
-| `/context` | Workspace summary | Review detected directory tree, datasets, and ML stack |
-| `/memory` | Session task memory | Display or reset active task history and persistent state |
-| `/dataset <path>` | EDA & Data Profiling | Analyze dataset shape, missing values, statistics, and distributions |
-| `/diff` | Git diff | View uncommitted code modifications |
-| `/checkpoint <msg>` | Git checkpoint | Create an immediate snapshot commit |
-| `/rollback` | Git rollback | Revert workspace changes safely |
-| `/compact` | Memory compaction | Compact session history to save token context window |
-| `/ascii` | Toggle ASCII mode | Switch between Unicode and pure ASCII terminal glyphs |
-| `/demo` | Status language demo | Preview SageCLI's branded status symbols and styling |
-| `/clear` | Clear screen | Clear terminal view while preserving session state |
-| `/exit` / `/quit` | Exit | Exit SageCLI session |
+| Command | Action |
+| :--- | :--- |
+| `/setup` | Re-run interactive setup wizard to configure providers / keys |
+| `/mode <safe\|auto\|plan>` | Switch active execution mode on the fly |
+| `/model <model_name>` | Switch active LLM model |
+| `/provider <name>` | Switch active LLM provider (`gemini`, `openai`, `anthropic`, `groq`, `ollama`) |
+| `/dataset <path>` | Inspect dataset shape, schema, and statistics |
+| `/diff` | View uncommitted code modifications |
+| `/checkpoint <msg>` | Create a manual Git checkpoint |
+| `/rollback` | Revert uncommitted changes |
+| `/demo` | Run a visual demonstration of the status language |
+| `/clear` | Clear screen and reprint startup banner |
+| `/exit` | Exit SageCLI |
 
 ---
 
