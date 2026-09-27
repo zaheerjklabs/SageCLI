@@ -117,6 +117,127 @@ def create_banner_panel(
     )
 
 
+def create_tips_renderable() -> RenderableType:
+    """Render the 'Tips for getting started' block."""
+    text = Text()
+    text.append("Tips for getting started:\n", style=f"bold {Palette.TEXT_LIGHT}")
+    text.append("1. Ask questions, edit files, or run commands.\n", style=f"{Palette.TEXT_MUTED}")
+    text.append("2. Be specific for the best results.\n", style=f"{Palette.TEXT_MUTED}")
+    text.append("3. Create ", style=f"{Palette.TEXT_MUTED}")
+    text.append("SAGE.md", style=f"bold {Palette.SAGE_PRIMARY}")
+    text.append(" files to customize your interactions with Sage.\n", style=f"{Palette.TEXT_MUTED}")
+    text.append("4. ", style=f"{Palette.TEXT_MUTED}")
+    text.append("/help", style=f"bold {Palette.MINT_ACCENT}")
+    text.append(" for more information.", style=f"{Palette.TEXT_MUTED}")
+    return text
+
+
+def create_prompt_container_box(
+    workspace: Optional[str] = None,
+    mode: str = "Safe",
+    model: str = "gemini-2.5-pro",
+    terminal_width: Optional[int] = None,
+    force_ascii: bool = False,
+    active_tools_count: int = 7,
+) -> RenderableType:
+    """
+    Construct the modern prompt & status container box:
+    - Top row: 'Using 1 SAGE.md file' (or 'Using workspace context') ... '7 tools active'
+    - Input bar: '> Ask Sage to scaffold an ML pipeline'
+    - Bottom row: '~/Developer/playground' ... 'safe-exec (interactive)' ... 'gemini-2.5-pro'
+    """
+    if terminal_width is None:
+        terminal_width = shutil.get_terminal_size(fallback=(80, 24)).columns
+
+    use_ascii = force_ascii or not supports_unicode()
+    box_style = ASCII if use_ascii else ROUNDED
+    panel_width = min(terminal_width - 4, 72)
+
+    ws_path = Path(workspace or os.getcwd()).resolve()
+    sage_file = ws_path / "SAGE.md"
+    if sage_file.exists():
+        context_left = "Using 1 SAGE.md file"
+    else:
+        context_left = "Using workspace context"
+
+    context_right = f"{active_tools_count} tools active"
+
+    # Top line inside box
+    top_table = Table.grid(expand=True)
+    top_table.add_column(justify="left")
+    top_table.add_column(justify="right")
+    top_table.add_row(
+        Text(context_left, style=f"{Palette.TEXT_MUTED}"),
+        Text(context_right, style=f"{Palette.TEXT_DIM}"),
+    )
+
+    # Input row box (inner panel)
+    prompt_sym = ">" if use_ascii else "❯"
+    inner_text = Text()
+    inner_text.append(f"{prompt_sym} ", style=f"bold {Palette.SAGE_PRIMARY}")
+    inner_text.append("▌ ", style=f"bold {Palette.TEXT_LIGHT}")
+    inner_text.append("Ask Sage to scaffold an ML pipeline or analyze datasets...", style=f"{Palette.TEXT_DIM}")
+
+    inner_box = Panel(
+        inner_text,
+        box=box_style,
+        border_style=Palette.BORDER_LIGHT if not use_ascii else Palette.BORDER_MUTED,
+        padding=(0, 1),
+    )
+
+    # Bottom status row (Left: Folder location, Center: Mode, Right: Model)
+    ws_str = get_formatted_workspace(str(ws_path))
+    # Shorten workspace path cleanly so columns never collide
+    max_ws_len = 22
+    if len(ws_str) > max_ws_len:
+        parts = [p for p in ws_str.split("/") if p]
+        if len(parts) >= 2 and len(f".../{parts[-2]}/{parts[-1]}") <= max_ws_len:
+            ws_display = f".../{parts[-2]}/{parts[-1]}"
+        elif parts:
+            ws_display = f".../{parts[-1]}"
+            if len(ws_display) > max_ws_len:
+                ws_display = ws_display[:max_ws_len-3] + "..."
+        else:
+            ws_display = ws_str[:max_ws_len-3] + "..."
+    else:
+        ws_display = ws_str
+
+    mode_clean = mode.lower()
+    if mode_clean == "safe":
+        mode_str = "safe-exec (interactive)"
+    elif mode_clean == "auto":
+        mode_str = "auto-exec (autonomous)"
+    else:
+        mode_str = f"{mode_clean}-exec (plan)"
+    model_str = model or "gemini-2.5-pro"
+
+    bottom_table = Table.grid(expand=True)
+    bottom_table.add_column(justify="left", ratio=4, no_wrap=True)
+    bottom_table.add_column(justify="center", ratio=4, no_wrap=True)
+    bottom_table.add_column(justify="right", ratio=3, no_wrap=True)
+    bottom_table.add_row(
+        Text(ws_display, style=f"{Palette.SAGE_PRIMARY}"),
+        Text(mode_str, style=f"{Palette.MINT_ACCENT}"),
+        Text(model_str, style=f"{Palette.CYAN_ACCENT}"),
+    )
+
+    container_group = Group(
+        top_table,
+        inner_box,
+        bottom_table,
+    )
+
+    return Align.center(
+        Panel(
+            container_group,
+            box=box_style,
+            border_style=Palette.BORDER_MUTED,
+            padding=(1, 2),
+            width=panel_width,
+        )
+    )
+
+
 def create_metadata_table(
     workspace: Optional[str] = None,
     provider: Optional[str] = None,
@@ -185,18 +306,23 @@ def render_startup_screen(
     console.print(banner)
     console.print()
 
-    # Contextual metadata
-    meta = create_metadata_table(
-        workspace=workspace,
-        provider=provider,
-        model=model,
-        mode=mode,
-        version=version,
-    )
-
+    # Tips for getting started
+    tips = create_tips_renderable()
+    panel_width = min(term_width - 4, 72)
     if term_width >= MIN_WIDTH_FULL_BOX:
-        console.print(Align.center(meta))
+        console.print(Align.center(tips, width=panel_width))
     else:
-        console.print(meta)
+        console.print(tips)
 
+    console.print()
+
+    # Modern Prompt & Status Container Box
+    container_box = create_prompt_container_box(
+        workspace=workspace,
+        mode=mode,
+        model=model,
+        terminal_width=term_width,
+        force_ascii=force_ascii,
+    )
+    console.print(container_box)
     console.print()

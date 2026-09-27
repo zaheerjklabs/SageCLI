@@ -94,6 +94,86 @@ class SageConsole:
         sym = escape(self.get_symbols().ACTIVE)
         self._console.print(f"[{Palette.SAGE_PRIMARY}]{sym}[/] [{Palette.TEXT_LIGHT}]{message}[/]")
 
+    # Thinking, Doing & Streaming Helpers
+
+    def status(self, message: str, spinner: str = "dots"):
+        """Context manager displaying a live animated spinner with Sage styling."""
+        sym = escape(self.get_symbols().RUNNING)
+        return self._console.status(
+            f"[{Palette.MINT_ACCENT}]{sym} {message}[/]",
+            spinner=spinner,
+            spinner_style=Palette.MINT_ACCENT,
+        )
+
+    def thinking(self, message: str = "Sage is thinking..."):
+        """Context manager for agent thinking state with live spinner."""
+        return self.status(message)
+
+    def stream_chunk(self, chunk: str) -> None:
+        """Output a text chunk immediately for real-time word-by-word streaming."""
+        self._console.print(chunk, end="", highlight=False)
+        if hasattr(self._console.file, "flush"):
+            try:
+                self._console.file.flush()
+            except Exception:
+                pass
+
+    def create_thinking_stream(self, message: str = "Sage is thinking..."):
+        """Create a thinking & streaming context manager."""
+        return ThinkingStream(self, message)
+
+
+class ThinkingStream:
+    """Manages dynamic transition between 'thinking' animated spinner and live word-by-word streaming."""
+
+    def __init__(self, console: SageConsole, message: str = "Sage is thinking..."):
+        self.console = console
+        self.message = message
+        self._status = None
+        self.has_streamed = False
+
+    def __enter__(self):
+        sym = escape(self.console.get_symbols().ACTIVE)
+        self._status = self.console.console.status(
+            f"[{Palette.SAGE_PRIMARY}]{sym}[/] [{Palette.MINT_ACCENT} bold]{self.message}[/]",
+            spinner="dots",
+            spinner_style=Palette.MINT_ACCENT,
+        )
+        self._status.start()
+        return self
+
+    def on_chunk(self, chunk: str) -> None:
+        if not chunk:
+            return
+        if not self.has_streamed:
+            if self._status:
+                self._status.stop()
+                self._status = None
+            self.has_streamed = True
+            self.console.print()  # Clean line break before stream
+
+        self.console.stream_chunk(chunk)
+
+    def update_status(self, message: str) -> None:
+        self.message = message
+        if self._status:
+            sym = escape(self.console.get_symbols().ACTIVE)
+            self._status.update(f"[{Palette.SAGE_PRIMARY}]{sym}[/] [{Palette.MINT_ACCENT} bold]{message}[/]")
+
+    def stop_status(self) -> None:
+        if self._status:
+            self._status.stop()
+            self._status = None
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._status:
+            self._status.stop()
+            self._status = None
+        if self.has_streamed:
+            self.console.print()
+            self.console.print()
+
 
 # Global default console instance
 default_console = SageConsole()
+

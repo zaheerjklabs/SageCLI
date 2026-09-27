@@ -54,3 +54,28 @@ def test_prompt_formatting():
 
     ascii_prompt = get_prompt_text(force_ascii=True)
     assert ascii_prompt == "sage > "
+
+
+def test_thinking_stream_and_chunk_streaming():
+    """Verify ThinkingStream transitions from thinking status to word-by-word streaming."""
+    buffer = io.StringIO()
+    console = SageConsole(file=buffer)
+
+    with console.create_thinking_stream("Sage is thinking...") as stream:
+        assert stream.has_streamed is False
+        stream.on_chunk("Hello ")
+        assert stream.has_streamed is True
+        stream.on_chunk("world!")
+
+    out = buffer.getvalue()
+    assert "Hello world!" in out
+
+
+def test_console_spinner_status():
+    """Verify console.status context manager runs cleanly."""
+    buffer = io.StringIO()
+    console = SageConsole(file=buffer)
+
+    with console.status("Inspecting model..."):
+        pass
+

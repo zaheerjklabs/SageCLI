@@ -1,6 +1,6 @@
 """Interactive prompt formatting, completion, and session management for SageCLI."""
 
-from typing import Dict
+from typing import Dict, Optional, Any
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.history import InMemoryHistory
@@ -94,12 +94,45 @@ def get_prompt_tokens(force_ascii: bool = False) -> FormattedText:
     ])
 
 
+def get_bottom_toolbar_tokens(
+    workspace: Optional[str] = None,
+    mode: str = "Safe",
+    model: str = "gemini-2.5-pro",
+    force_ascii: bool = False,
+) -> FormattedText:
+    """Format the bottom status row: [folder location] [mode] [model]."""
+    from sagecli.ui.banner import get_formatted_workspace
+    ws_str = get_formatted_workspace(workspace)
+    mode_clean = mode.lower()
+    if mode_clean == "safe":
+        mode_display = "safe-exec (interactive)"
+    elif mode_clean == "auto":
+        mode_display = "auto-exec (autonomous)"
+    else:
+        mode_display = f"{mode_clean}-exec (plan)"
+    model_display = model or "gemini-2.5-pro"
+
+    return FormattedText([
+        ("class:toolbar.folder", f" {ws_str} "),
+        ("class:toolbar.divider", "   "),
+        ("class:toolbar.mode", f" {mode_display} "),
+        ("class:toolbar.divider", "   "),
+        ("class:toolbar.model", f" {model_display} "),
+    ])
+
+
 def get_prompt_toolkit_style() -> PtStyle:
     """Return custom prompt_toolkit style for SageCLI."""
     return PtStyle.from_dict({
         "prompt.name": f"{Palette.SAGE_PRIMARY} bold",
         "prompt.space": "",
         "prompt.symbol": f"{Palette.MINT_ACCENT} bold",
+        # Bottom Status Toolbar Styling (Folder Location, Mode, Model)
+        "bottom-toolbar": f"bg:{Palette.BG_CARD} #{Palette.TEXT_MUTED[1:]}",
+        "toolbar.folder": f"#{Palette.SAGE_PRIMARY[1:]} bold",
+        "toolbar.mode": f"#{Palette.MINT_ACCENT[1:]}",
+        "toolbar.model": f"#{Palette.CYAN_ACCENT[1:]} bold",
+        "toolbar.divider": f"#{Palette.BORDER_LIGHT[1:]}",
         # Auto-completion menu styling
         "completion-menu": f"bg:{Palette.BG_CARD} #{Palette.TEXT_LIGHT[1:]}",
         "completion-menu.completion": f"bg:{Palette.BG_CARD} #{Palette.TEXT_LIGHT[1:]}",
@@ -110,10 +143,28 @@ def get_prompt_toolkit_style() -> PtStyle:
     })
 
 
-def create_prompt_session(force_ascii: bool = False) -> PromptSession:
-    """Create a configured interactive prompt session with auto-completion."""
+def create_prompt_session(config: Optional[Any] = None, force_ascii: bool = False) -> PromptSession:
+    """Create a configured interactive prompt session with auto-completion and dynamic status bar."""
+    def _bottom_toolbar():
+        if config is not None:
+            return get_bottom_toolbar_tokens(
+                workspace=config.workspace,
+                mode=config.mode,
+                model=config.model,
+                force_ascii=force_ascii or config.ascii_only,
+            )
+        from sagecli.config import SageConfig
+        cfg = SageConfig.load()
+        return get_bottom_toolbar_tokens(
+            workspace=cfg.workspace,
+            mode=cfg.mode,
+            model=cfg.model,
+            force_ascii=force_ascii or cfg.ascii_only,
+        )
+
     return PromptSession(
         message=lambda: get_prompt_tokens(force_ascii=force_ascii),
+        bottom_toolbar=_bottom_toolbar,
         style=get_prompt_toolkit_style(),
         history=InMemoryHistory(),
         auto_suggest=AutoSuggestFromHistory(),

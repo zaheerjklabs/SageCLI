@@ -6,6 +6,8 @@ from rich.console import Console
 from sagecli.ui.banner import (
     create_banner_panel,
     create_metadata_table,
+    create_tips_renderable,
+    create_prompt_container_box,
     render_startup_screen,
     get_formatted_workspace,
 )
@@ -61,16 +63,47 @@ def test_create_metadata_table():
     assert "0.1.0" in text
 
 
+def test_create_tips_renderable():
+    """Verify tips section contains starting instructions."""
+    console = Console(width=80, record=True)
+    tips = create_tips_renderable()
+    console.print(tips)
+    text = console.export_text()
+    assert "Tips for getting started:" in text
+    assert "1. Ask questions" in text
+    assert "SAGE.md" in text
+    assert "/help" in text
+
+
+def test_create_prompt_container_box():
+    """Verify Gemini-style prompt & status container box renders folder, mode, and model."""
+    console = Console(width=80, record=True)
+    box = create_prompt_container_box(
+        workspace="/home/zaheer/Developer/playground",
+        mode="Safe",
+        model="gemini-2.5-pro",
+        terminal_width=80,
+    )
+    console.print(box)
+    text = console.export_text()
+    assert "~/Developer/playground" in text
+    assert "safe-exec" in text
+    assert "gemini-2.5-pro" in text
+    assert "tools active" in text
+
+
 def test_render_startup_screen():
     """Verify full startup screen renders without error."""
     console = Console(width=80, record=True)
     render_startup_screen(
         console=console,
         workspace="/home/zaheer/projects/test",
-        model="Gemini 2.5 Pro",
+        model="gemini-2.5-pro",
         mode="Safe",
         version="0.1.0",
     )
     text = console.export_text()
     assert "S A G E C L I" in text
-    assert "Gemini 2.5 Pro" in text
+    assert "Tips for getting started:" in text
+    assert "gemini-2.5-pro" in text
+    assert "~/projects/test" in text

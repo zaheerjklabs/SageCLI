@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Callable
 import json
 
 
@@ -73,8 +73,9 @@ class BaseLLMProvider(ABC):
         messages: List[Message],
         tools: Optional[List[Dict[str, Any]]] = None,
         temperature: float = 0.2,
+        on_chunk: Optional[Callable[[str], None]] = None,
     ) -> LLMResponse:
-        """Generate a response synchronously from the model."""
+        """Generate a response synchronously or streaming tokens via on_chunk callback."""
         pass
 
     @abstractmethod

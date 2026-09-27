@@ -63,12 +63,33 @@ class SageAgent:
         while iteration < max_iterations:
             iteration += 1
 
-            # Call LLM provider
-            response: LLMResponse = self.provider.generate(
-                messages=messages,
-                tools=tools_schema,
-                temperature=0.2,
-            )
+            if iteration == 1:
+                thinking_msg = "Sage is thinking and planning..."
+            else:
+                thinking_msg = f"Sage is analyzing results & thinking (step {iteration}/{max_iterations})..."
+
+            # Call LLM provider with live thinking spinner & real-time streaming
+            with self.console.create_thinking_stream(thinking_msg) as stream:
+                try:
+                    response: LLMResponse = self.provider.generate(
+                        messages=messages,
+                        tools=tools_schema,
+                        temperature=0.2,
+                        on_chunk=stream.on_chunk,
+                    )
+                except TypeError:
+                    response = self.provider.generate(
+                        messages=messages,
+                        tools=tools_schema,
+                        temperature=0.2,
+                    )
+
+                # If provider did not stream on_chunk but returned content, render it now
+                if response.content and response.content.strip() and not stream.has_streamed:
+                    stream.stop_status()
+                    self.console.print()
+                    self.console.markdown(response.content)
+                    self.console.print()
 
             # Record token usage
             from sagecli.core.tracker import session_tracker
@@ -79,11 +100,7 @@ class SageAgent:
                 final_answer = response.content
                 break
 
-            # 1. Output thoughts/reasoning or answer if provided
-            if response.content and response.content.strip():
-                self.console.print()
-                self.console.markdown(response.content)
-                self.console.print()
+            if response.content:
                 final_answer = response.content
 
             # 2. Add assistant message to conversation history
@@ -100,42 +117,51 @@ class SageAgent:
                 self.console.success("Task completed successfully.")
                 break
 
-            # 4. Dispatch tool calls sequentially
+            # 4. Dispatch tool calls sequentially with live "doing" status
             for tc in response.tool_calls:
                 step_id = f"step_{len(self.state.steps) + 1}"
                 
-                # Format friendly display
+                # Format friendly display and doing status
                 if tc.name == "inspect_dataset":
                     ds_path = tc.arguments.get("path", "")
                     self.console.action(f"Inspecting dataset: [bold]{ds_path}[/]")
+                    doing_status = f"Analyzing dataset structure: {ds_path}..."
                 elif tc.name == "write_file":
                     file_p = tc.arguments.get("path", "")
                     self.console.action(f"Writing file: [bold]{file_p}[/]")
+                    doing_status = f"Writing file {file_p}..."
                 elif tc.name == "patch_file":
                     file_p = tc.arguments.get("path", "")
                     self.console.action(f"Patching file: [bold]{file_p}[/]")
+                    doing_status = f"Applying diff patch to {file_p}..."
                 elif tc.name == "read_file":
                     file_p = tc.arguments.get("path", "")
                     self.console.info(f"Reading file: {file_p}")
+                    doing_status = f"Reading {file_p}..."
                 elif tc.name == "execute_command":
                     cmd = tc.arguments.get("command", "")
                     self.console.running(f"Executing: [bold]{cmd}[/]")
+                    doing_status = f"Executing command: {cmd}..."
                 elif tc.name == "run_tests":
                     self.console.running("Running automated test suite")
+                    doing_status = "Running pytest test suite..."
                 elif tc.name == "git_checkpoint":
                     msg = tc.arguments.get("message", "")
                     self.console.action(f"Creating Git checkpoint: {msg}")
+                    doing_status = f"Saving checkpoint: {msg}..."
                 else:
                     self.console.action(f"Running tool: {tc.name}")
+                    doing_status = f"Executing {tc.name}..."
 
-                # Execute tool
-                tool_result = self.registry.dispatch(
-                    tool_name=tc.name,
-                    workspace=self.workspace,
-                    arguments=tc.arguments,
-                    mode=self.config.mode,
-                    permission_callback=permission_callback,
-                )
+                # Execute tool with live status spinner
+                with self.console.status(doing_status, spinner="dots"):
+                    tool_result = self.registry.dispatch(
+                        tool_name=tc.name,
+                        workspace=self.workspace,
+                        arguments=tc.arguments,
+                        mode=self.config.mode,
+                        permission_callback=permission_callback,
+                    )
 
                 # Record state step
                 step = TaskStep(

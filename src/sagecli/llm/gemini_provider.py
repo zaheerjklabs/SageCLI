@@ -1,7 +1,7 @@
 """Google Gemini LLM Provider supporting tool calling and streaming."""
 
 import json
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Callable
 import requests
 
 from sagecli.llm.base import BaseLLMProvider, Message, LLMResponse, ToolCall
@@ -93,6 +93,7 @@ class GeminiProvider(BaseLLMProvider):
         messages: List[Message],
         tools: Optional[List[Dict[str, Any]]] = None,
         temperature: float = 0.2,
+        on_chunk: Optional[Callable[[str], None]] = None,
     ) -> LLMResponse:
         system_instruction, contents = self._convert_messages(messages)
         
@@ -101,7 +102,6 @@ class GeminiProvider(BaseLLMProvider):
         if not model_name.startswith("models/"):
             model_name = f"models/{model_name}"
 
-        url = f"{self.api_base}/v1beta/{model_name}:generateContent"
         headers = {
             "Content-Type": "application/json",
             "x-goog-api-key": self.api_key,
@@ -141,44 +141,106 @@ class GeminiProvider(BaseLLMProvider):
             return 2.0 * (attempt_idx + 1)
 
         max_retries = 3
+        use_stream = on_chunk is not None
+        if use_stream:
+            url = f"{self.api_base}/v1beta/{model_name}:streamGenerateContent?alt=sse"
+        else:
+            url = f"{self.api_base}/v1beta/{model_name}:generateContent"
+
         for attempt in range(max_retries + 1):
             try:
-                resp = requests.post(url, headers=headers, json=payload, timeout=self.timeout_seconds)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    candidates = data.get("candidates", [])
-                    if not candidates:
-                        return LLMResponse(content="", finish_reason="empty")
+                if use_stream:
+                    resp = requests.post(url, headers=headers, json=payload, timeout=self.timeout_seconds, stream=True)
+                    if resp.status_code == 200:
+                        text_parts = []
+                        tool_calls = []
+                        raw_parts = []
+                        finish_reason = "stop"
+                        usage: Dict[str, Any] = {}
 
-                    cand = candidates[0]
-                    parts = cand.get("content", {}).get("parts", [])
-                    
-                    text_parts = []
-                    tool_calls = []
+                        for line in resp.iter_lines(decode_unicode=True):
+                            if not line:
+                                continue
+                            line = line.strip()
+                            if not line.startswith("data: "):
+                                continue
+                            data_str = line[6:].strip()
+                            try:
+                                data = json.loads(data_str)
+                            except Exception:
+                                continue
 
-                    for i, part in enumerate(parts):
-                        if "text" in part:
-                            text_parts.append(part["text"])
-                        if "functionCall" in part:
-                            fc = part["functionCall"]
-                            tool_calls.append(ToolCall(
-                                id=f"call_gemini_{i}",
-                                name=fc.get("name", ""),
-                                arguments=fc.get("args", {}),
-                            ))
+                            if "usageMetadata" in data:
+                                usage = data["usageMetadata"]
 
-                    usage = data.get("usageMetadata", {})
-                    return LLMResponse(
-                        content="".join(text_parts),
-                        tool_calls=tool_calls,
-                        model=self.model,
-                        prompt_tokens=usage.get("promptTokenCount", 0),
-                        completion_tokens=usage.get("candidatesTokenCount", 0),
-                        total_tokens=usage.get("totalTokenCount", 0),
-                        finish_reason=cand.get("finishReason", "stop"),
-                        raw_response=data,
-                        raw_parts=parts,
-                    )
+                            candidates = data.get("candidates", [])
+                            if candidates:
+                                cand = candidates[0]
+                                if "finishReason" in cand:
+                                    finish_reason = cand["finishReason"]
+                                parts = cand.get("content", {}).get("parts", [])
+                                for part in parts:
+                                    if "text" in part:
+                                        t = part["text"]
+                                        text_parts.append(t)
+                                        if on_chunk:
+                                            on_chunk(t)
+                                    if "functionCall" in part:
+                                        fc = part["functionCall"]
+                                        tool_calls.append(ToolCall(
+                                            id=f"call_gemini_{len(tool_calls)}",
+                                            name=fc.get("name", ""),
+                                            arguments=fc.get("args", {}),
+                                        ))
+                                        raw_parts.append(part)
+
+                        return LLMResponse(
+                            content="".join(text_parts),
+                            tool_calls=tool_calls,
+                            model=self.model,
+                            prompt_tokens=usage.get("promptTokenCount", 0),
+                            completion_tokens=usage.get("candidatesTokenCount", 0),
+                            total_tokens=usage.get("totalTokenCount", 0),
+                            finish_reason=finish_reason,
+                            raw_parts=raw_parts if raw_parts else None,
+                        )
+                else:
+                    resp = requests.post(url, headers=headers, json=payload, timeout=self.timeout_seconds)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        candidates = data.get("candidates", [])
+                        if not candidates:
+                            return LLMResponse(content="", finish_reason="empty")
+
+                        cand = candidates[0]
+                        parts = cand.get("content", {}).get("parts", [])
+                        
+                        text_parts = []
+                        tool_calls = []
+
+                        for i, part in enumerate(parts):
+                            if "text" in part:
+                                text_parts.append(part["text"])
+                            if "functionCall" in part:
+                                fc = part["functionCall"]
+                                tool_calls.append(ToolCall(
+                                    id=f"call_gemini_{i}",
+                                    name=fc.get("name", ""),
+                                    arguments=fc.get("args", {}),
+                                ))
+
+                        usage = data.get("usageMetadata", {})
+                        return LLMResponse(
+                            content="".join(text_parts),
+                            tool_calls=tool_calls,
+                            model=self.model,
+                            prompt_tokens=usage.get("promptTokenCount", 0),
+                            completion_tokens=usage.get("candidatesTokenCount", 0),
+                            total_tokens=usage.get("totalTokenCount", 0),
+                            finish_reason=cand.get("finishReason", "stop"),
+                            raw_response=data,
+                            raw_parts=parts,
+                        )
                 
                 # If 503 (high demand) or 429 (rate limit), retry with dynamic backoff
                 if resp.status_code in (503, 429) and attempt < max_retries:

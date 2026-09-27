@@ -180,7 +180,7 @@ def display_usage_stats(config: SageConfig, sage_console: SageConsole):
 def run_interactive_repl(config: SageConfig, sage_console: SageConsole):
     """Run interactive engineering REPL loop with autonomous agent and slash commands."""
     try:
-        session = create_prompt_session(force_ascii=config.ascii_only)
+        session = create_prompt_session(config=config, force_ascii=config.ascii_only)
     except Exception:
         session = None
 

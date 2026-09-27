@@ -1,6 +1,6 @@
 """Unit tests for SageAgent autonomous loop and state tracking."""
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 
 from sagecli.config import SageConfig
 from sagecli.llm.base import BaseLLMProvider, Message, LLMResponse, ToolCall
@@ -13,22 +13,27 @@ from sagecli.ui.console import SageConsole
 class MockLLMProvider(BaseLLMProvider):
     """Mock LLM provider that simulates autonomous planning, coding, and debugging."""
 
-    def __init__(self, responses: List[LLMResponse]):
+    def __init__(self, responses: List[LLMResponse], stream_chunks: bool = False):
         super().__init__(api_key="mock", model="mock-model")
         self.responses = list(responses)
         self.call_count = 0
         self.received_messages: List[List[Message]] = []
+        self.stream_chunks = stream_chunks
 
     def generate(
         self,
         messages: List[Message],
         tools: Optional[List[Dict[str, Any]]] = None,
         temperature: float = 0.2,
+        on_chunk: Optional[Callable[[str], None]] = None,
     ) -> LLMResponse:
         self.received_messages.append(messages)
         if self.call_count < len(self.responses):
             resp = self.responses[self.call_count]
             self.call_count += 1
+            if self.stream_chunks and on_chunk and resp.content:
+                for word in resp.content.split(" "):
+                    on_chunk(word + " ")
             return resp
         return LLMResponse(content="Task completed.", tool_calls=[])
 
@@ -132,3 +137,23 @@ def test_agent_autonomous_execution_and_debugging(tmp_path):
     train_file = ws / "train.py"
     assert train_file.exists()
     assert "undefined_variable = 42" in train_file.read_text()
+
+
+def test_agent_streaming_tokens(tmp_path):
+    """Verify SageAgent correctly streams tokens word-by-word into console."""
+    import io
+    ws = tmp_path / "stream_ws"
+    ws.mkdir()
+    config = SageConfig(workspace=str(ws), mode="Auto", max_iterations=5)
+    
+    buffer = io.StringIO()
+    console = SageConsole(force_ascii=True, file=buffer)
+
+    resp = LLMResponse(content="Step 1: Exploring dataset and planning next steps.", tool_calls=[])
+    mock_llm = MockLLMProvider([resp], stream_chunks=True)
+    agent = SageAgent(config=config, provider=mock_llm, console=console)
+
+    final = agent.run_task("Explore data")
+    assert "Exploring dataset" in final
+    assert "Exploring dataset and planning" in buffer.getvalue()
+
