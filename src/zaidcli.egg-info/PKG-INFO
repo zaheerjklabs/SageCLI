@@ -1,8 +1,8 @@
 Metadata-Version: 2.4
-Name: sagecli
+Name: zaidcli
 Version: 0.1.0
-Summary: SageCLI - AI Engineering Agent for Machine Learning & Deep Learning
-Author: SageCLI Team
+Summary: Zaid CLI - AI Engineering Agent for Machine Learning & Deep Learning
+Author: Zaid CLI Team
 License: MIT
 Keywords: ai,cli,machine-learning,deep-learning,agent,engineering
 Classifier: Development Status :: 4 - Beta
@@ -27,23 +27,23 @@ Requires-Dist: pytest>=7.0.0; extra == "dev"
 Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
 Dynamic: license-file
 
-# SageCLI
+# Zaid CLI
 
 ```text
- ███████╗    █████╗     ██████╗    ███████╗
- ██╔════╝   ██╔══██╗   ██╔════╝    ██╔════╝
- ███████╗   ███████║   ██║  ███╗   █████╗
- ╚════██║   ██╔══██║   ██║   ██║   ██╔══╝
- ███████║   ██║  ██║   ╚██████╔╝   ███████╗
- ╚══════╝   ╚═╝  ╚═╝    ╚═════╝    ╚══════╝
+ ███████╗    █████╗     ██╗    ██████╗ 
+ ╚══███╔╝   ██╔══██╗    ██║    ██╔══██╗
+   ███╔╝    ███████║    ██║    ██║  ██║
+  ███╔╝     ██╔══██║    ██║    ██║  ██║
+ ███████╗   ██║  ██║    ██║    ██████╔╝
+ ╚══════╝   ╚═╝  ╚═╝    ╚═╝    ╚═════╝ 
 
-              S A G E C L I
+              Z A I D   C L I
         AI ENGINEERING AGENT
 ```
 
 > **Build • Train • Debug • Evaluate • Deploy**
 
-SageCLI is a terminal-native autonomous AI coding agent designed specifically for **Machine Learning, Deep Learning, and AI Engineering**. Running directly inside your terminal, SageCLI autonomously inspects repositories and datasets, plans modular architectures, writes and executes code, runs tests, self-debugs tracebacks, computes metrics, and sets up inference endpoints.
+Zaid CLI is a terminal-native autonomous AI coding agent designed specifically for **Machine Learning, Deep Learning, and AI Engineering**. Running directly inside your terminal, Zaid CLI autonomously inspects repositories and datasets, plans modular architectures, writes and executes code, runs tests, self-debugs tracebacks, computes metrics, and sets up inference endpoints.
 
 ---
 
@@ -71,9 +71,9 @@ Documentation & Git Checkpoints
 
 ## 🛠️ Key Capabilities
 
-* **First-Run Interactive Setup Wizard (`sage setup`)**: Multi-provider auto-detection, masked credential entry, model selection, mode choice, and live connection verification.
+* **First-Run Interactive Setup Wizard (`zaid setup`)**: Multi-provider auto-detection, masked credential entry, model selection, mode choice, and live connection verification.
 * **Provider-Agnostic Engine**: Native tool-calling support for:
-  * **Google Gemini** (`gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-2.0-flash`)
+  * **Google Gemini** (`gemini-3.7-flash`, `gemini-3.5-flash`, `gemini-3.8-flash`, `gemini-flash-latest`, `gemini-pro-latest`)
   * **OpenAI** (`gpt-4o`, `gpt-4o-mini`, `o3-mini`, `o1`)
   * **Anthropic Claude** (`claude-3-7-sonnet`, `claude-3-5-sonnet`, `claude-3-5-haiku`)
   * **Groq** (`llama-3.3-70b-versatile`, `deepseek-r1-distill-llama-70b`)
@@ -86,12 +86,12 @@ Documentation & Git Checkpoints
   * `execute_command`: Shell command and Python script execution with timeouts and security checks.
   * `run_tests`: Pytest runner with failure analysis and traceback extraction.
   * `git_checkpoint` / `git_diff` / `git_rollback`: Version control safety and rollback support.
-* **Self-Healing & Autonomous Debugging**: When scripts fail with errors (e.g., shape mismatches, missing modules, runtime exceptions), SageCLI intercepts the stderr/stack trace, diagnoses the cause, patches the code, and re-executes until verified.
+* **Self-Healing & Autonomous Debugging**: When scripts fail with errors (e.g., shape mismatches, missing modules, runtime exceptions), Zaid CLI intercepts the stderr/stack trace, diagnoses the cause, patches the code, and re-executes until verified.
 * **Execution Modes**:
   * `Safe` (Default) — Requests user approval before running write or shell operations.
   * `Auto` — Autonomously executes safe workspace steps, prompting only for destructive actions.
   * `Plan` — Generates comprehensive plans and diffs without modifying files on disk.
-* **State & Memory Management**: Persists conversation history, task memory, dataset metadata, and ML experiment metrics in `.sage/` (automatically added to `.gitignore`).
+* **State & Memory Management**: Persists conversation history, task memory, dataset metadata, and ML experiment metrics in `.zaid/` (automatically added to `.gitignore`).
 
 ---
 
@@ -99,8 +99,8 @@ Documentation & Git Checkpoints
 
 ```bash
 # Clone the repository
-git clone https://github.com/zaheerjklabs/SageCLI.git
-cd SageCLI
+git clone https://github.com/zaheerjklabs/ZaidCLI.git
+cd ZaidCLI
 
 # Install in editable mode
 pip install -e .
@@ -110,18 +110,18 @@ pip install -e .
 
 ## ⚡ Quickstart
 
-### 1. Launch SageCLI
+### 1. Launch Zaid CLI
 ```bash
-sage
+zaid
 ```
 On first launch, the interactive setup wizard will guide you through provider selection and credential validation.
 
 ### 2. Interactive Engineering Prompt
 ```text
-sage ❯ Build a customer churn prediction system using data/raw/customers.csv with XGBoost and a FastAPI endpoint.
+zaid ❯ Build a customer churn prediction system using data/raw/customers.csv with XGBoost and a FastAPI endpoint.
 ```
 
-SageCLI will:
+Zaid CLI will:
 1. 🔍 **Inspect** `data/raw/customers.csv` and report feature distributions.
 2. 📐 **Plan** modular components (`src/data.py`, `src/model.py`, `src/train.py`, `src/app.py`).
 3. 💻 **Implement** clean preprocessing, feature engineering, and model training.
@@ -133,7 +133,7 @@ SageCLI will:
 
 ## 🎮 Interactive Slash Commands (`/`)
 
-SageCLI provides an intuitive, Claude Code-inspired command palette with autocompletion and instant dropdown help:
+Zaid CLI provides an intuitive, Claude Code-inspired command palette with autocompletion and instant dropdown help:
 
 | Command | Action | Description |
 | :--- | :--- | :--- |
@@ -153,25 +153,25 @@ SageCLI provides an intuitive, Claude Code-inspired command palette with autocom
 | `/rollback` | Git rollback | Revert workspace changes safely |
 | `/compact` | Memory compaction | Compact session history to save token context window |
 | `/ascii` | Toggle ASCII mode | Switch between Unicode and pure ASCII terminal glyphs |
-| `/demo` | Status language demo | Preview SageCLI's branded status symbols and styling |
+| `/demo` | Status language demo | Preview Zaid CLI's branded status symbols and styling |
 | `/clear` | Clear screen | Clear terminal view while preserving session state |
-| `/exit` / `/quit` | Exit | Exit SageCLI session |
+| `/exit` / `/quit` | Exit | Exit Zaid CLI session |
 
 ---
 
 ## 🏗️ Architecture
 
 ```text
-src/sagecli/
+src/zaidcli/
 ├── __init__.py           # Package version and brand definitions
-├── __main__.py           # python -m sagecli entry point
+├── __main__.py           # python -m zaidcli entry point
 ├── cli.py                # Typer application, CLI flags, and interactive REPL
 ├── config.py             # Multi-provider hierarchical configuration
 ├── security.py           # Secret masking, sandboxing, and safety checks
 ├── wizard.py             # First-run interactive setup wizard
 ├── core/
 │   ├── agent.py          # Autonomous agent execution loop
-│   ├── state.py          # Project memory, task history, and metrics in .sage/
+│   ├── state.py          # Project memory, task history, and metrics in .zaid/
 │   ├── context.py        # Workspace scanner, dataset detector, and environment specs
 │   └── orchestrator.py   # Multi-role prompt engineering for ML/DL pipelines
 ├── llm/
@@ -194,7 +194,7 @@ src/sagecli/
     ├── logo.py           # ASCII logo and responsive renderers
     ├── prompts.py        # Interactive prompt_toolkit session
     ├── symbols.py        # Unicode & ASCII symbols
-    └── theme.py          # SageCLI palette and Rich styles
+    └── theme.py          # Zaid CLI palette and Rich styles
 ```
 
 ---

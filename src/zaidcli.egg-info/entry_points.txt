@@ -1,0 +1,3 @@
+[console_scripts]
+zaid = zaidcli.cli:app
+zaidcli = zaidcli.cli:app
