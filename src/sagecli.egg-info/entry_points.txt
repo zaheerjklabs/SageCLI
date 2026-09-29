@@ -1,3 +1,0 @@
-[console_scripts]
-sage = sagecli.cli:app
-sagecli = sagecli.cli:app

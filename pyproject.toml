@@ -3,14 +3,14 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sagecli"
+name = "sage-ai-cli"
 version = "0.1.0"
 description = "SageCLI - AI Engineering Agent for Machine Learning & Deep Learning"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-    { name = "SageCLI Team" }
+    { name = "zaheerjklabs", email = "zaheerjklabs@gmail.com" }
 ]
 keywords = ["ai", "cli", "machine-learning", "deep-learning", "agent", "engineering"]
 classifiers = [

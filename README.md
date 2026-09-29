@@ -68,6 +68,12 @@ Documentation & Git Checkpoints
 
 ## 📦 Installation
 
+### From PyPI
+```bash
+pip install sage-ai-cli
+```
+
+### From Source (Development)
 ```bash
 # Clone the repository
 git clone https://github.com/zaheerjklabs/SageCLI.git
