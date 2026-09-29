@@ -70,7 +70,7 @@ Documentation & Git Checkpoints
 
 ### From PyPI
 ```bash
-pip install sage-ai-cli
+pip install sage-ai-agent
 ```
 
 ### From Source (Development)
